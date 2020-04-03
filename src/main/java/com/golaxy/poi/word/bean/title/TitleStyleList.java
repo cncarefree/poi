@@ -1,4 +1,4 @@
-package com.golaxy.poi.word.bean;
+package com.golaxy.poi.word.bean.title;
 
 import java.util.ArrayList;
 import java.util.HashMap;

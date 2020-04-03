@@ -1,7 +1,12 @@
 package com.golaxy.poi.word;
 
-import com.golaxy.poi.word.bean.TitleStyle;
-import com.golaxy.poi.word.bean.TitleStyleList;
+import com.golaxy.poi.word.bean.table.Table;
+import com.golaxy.poi.word.bean.table.TableCell;
+import com.golaxy.poi.word.bean.table.TableCellStyle;
+import com.golaxy.poi.word.bean.table.TableRow;
+import com.golaxy.poi.word.bean.title.TitleStyle;
+import com.golaxy.poi.word.bean.title.TitleStyleList;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.poi.wp.usermodel.HeaderFooterType;
 import org.apache.poi.xwpf.usermodel.*;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.*;
@@ -11,6 +16,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 快速创建文档
@@ -69,9 +75,39 @@ public class DocumentBuilder {
      * @param text
      */
     public void setHeader(HeaderFooterType type, ParagraphAlignment align, String text) {
-        XWPFParagraph paragraph = xwpfDocument.createHeader(HeaderFooterType.DEFAULT).createParagraph();
+        XWPFHeader header = xwpfDocument.createHeader(HeaderFooterType.DEFAULT);
+        XWPFParagraph paragraph = header.createParagraph();
         paragraph.setFontAlignment(align.getValue());
         paragraph.createRun().setText(text);
+    }
+
+    /**
+     * 设置word的页脚
+     *
+     * @param type  DEFAULT表示默认,EVEN表示每页重复，FIRST表示仅首页
+     * @param align 设置对齐
+     * @param text
+     */
+    public void setFooter(HeaderFooterType type, ParagraphAlignment align, String text) {
+        XWPFFooter footer = xwpfDocument.createFooter(HeaderFooterType.DEFAULT);
+        XWPFParagraph paragraph = footer.createParagraph();
+        paragraph.setFontAlignment(align.getValue());
+        paragraph.createRun().setText(text);
+    }
+
+    /**
+     * 按层级创建标题
+     *
+     * @param level 层级，默认支持:1/2/3/4,字体大小默认为:18/16/14/12
+     * @param text  文本内容
+     */
+    public void createTitle(int level, String text) {
+        initTitle();
+        XWPFParagraph paragraph = xwpfDocument.createParagraph();
+        XWPFRun run = paragraph.createRun();
+        run.setText(text);
+        paragraph.setStyle(titleStyles.getNameByLevel(level));
+
     }
 
     /**
@@ -95,19 +131,50 @@ public class DocumentBuilder {
 
     }
 
-    /**
-     * 按层级创建标题
-     * @param level 层级，默认支持:1/2/3/4,字体大小默认为:18/16/14/12
-     * @param text 文本内容
-     */
-    public void createTitle(int level, String text) {
-        initTitle();
-        XWPFParagraph paragraph = xwpfDocument.createParagraph();
-        XWPFRun run = paragraph.createRun();
-        run.setText(text);
-        paragraph.setStyle(titleStyles.getNameByLevel(level));
+    public void createTable(Table t) {
+        XWPFTable table = xwpfDocument.createTable();
+        //默认表格居然有一行，扰乱布局只好删掉。
+        table.removeRow(0);
+        //表格对齐方式
+        table.setTableAlignment(t.getTableAlign());
+        if (t.getWidth() != null) {
+            //单位为缇，20缇一磅，1厘米28.35磅，注意考虑表格线的宽度
+            table.setWidth(20 * t.getWidth());
+        }
+        if (!CollectionUtils.isEmpty(t.getHeader())) {
+            XWPFTableRow row = table.createRow();
+            setTableRow(row, t.getHeader());
+        }
+        List<TableRow> rows = t.getRows();
+        if (!CollectionUtils.isEmpty(rows)) {
+            for (TableRow row : rows) {
+                XWPFTableRow row1 = table.createRow();
+                setTableRow(row1, row.getCell());
+            }
+        }
+//        List<XWPFTableRow> rows = table.getRows();
+//        for (int i = 0; i < rows.size(); i++) {
+//            List<XWPFTableCell> tableCells = rows.get(i).getTableCells();
+//            for (int j = 0; j < tableCells.size(); j++) {
+//                XWPFParagraph paragraph = tableCells.get(j).getParagraphs().get(0);
+//                XWPFRun run = paragraph.createRun();
+//                if (i == 0) {
+//                    tableCells.get(j).setWidth("2000");
+//                    //加粗
+//                    run.setBold(true);
+//                    //字体大小
+//                    run.setFontSize(22);
+//                }
+//
+//                run.setText("111");
+//                tableCells.get(j).setColor("cccccc");
+//            }
+//        }
+//
+//        table.createRow();
 
     }
+
 
     public void build(OutputStream stream) throws IOException {
         xwpfDocument.write(stream);
@@ -174,6 +241,62 @@ public class DocumentBuilder {
 
         style.setType(STStyleType.PARAGRAPH);
         styles.addStyle(style);
+
+    }
+
+    private void setTableRow(XWPFTableRow row, List<TableCell> cellList) {
+
+//                rows.forEach(row -> {
+//            List<XWPFTableCell> tableCells = row.getTableCells();
+//            tableCells.forEach(cel -> {
+//                XWPFParagraph paragraph = cel.getParagraphs().get(0);
+//                XWPFRun run = paragraph.createRun();
+//                //加粗
+//                run.setBold(true);
+//                //字体大小
+//                run.setFontSize(22);
+//                run.setText("111");
+//                cel.setColor("cccccc");
+//            });
+//        });
+        for (int i = 0; i < cellList.size(); i++) {
+            XWPFTableCell cell = row.getCell(i);
+            if (cell == null) {
+                cell = row.createCell();
+            }
+
+            TableCell tableCell = cellList.get(i);
+
+            XWPFParagraph paragraph = cell.getParagraphs().get(0);
+            XWPFRun run = paragraph.createRun();
+            if (tableCell.getWidth() != null) {
+                cell.setWidth(tableCell.getWidth() * 20 + "");
+            }
+            TableCellStyle style = tableCell.getStyle();
+            if (Objects.nonNull(style)) {
+                //设置对齐
+                paragraph.setAlignment(style.getTextAlign());
+                String backgroundColor = style.getBackgroundColor();
+                if (Objects.nonNull(backgroundColor)) {
+                    cell.setColor(backgroundColor);
+                }
+                String fontColor = style.getFontColor();
+                if (Objects.nonNull(fontColor)) {
+                    run.setColor(fontColor);
+                }
+                Integer fontSize = style.getFontSize();
+                if (Objects.nonNull(fontSize)) {
+                    run.setFontSize(fontSize);
+                }
+                if (style.isBold()) {
+                    run.setBold(true);
+                }
+                if (style.isItalic()) {
+                    run.setItalic(true);
+                }
+            }
+            run.setText(tableCell.getText());
+        }
 
     }
 }

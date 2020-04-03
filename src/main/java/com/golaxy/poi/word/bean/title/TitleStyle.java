@@ -1,4 +1,4 @@
-package com.golaxy.poi.word.bean;
+package com.golaxy.poi.word.bean.title;
 
 public class TitleStyle {
     private int level;
