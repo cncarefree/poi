@@ -1,6 +1,7 @@
 package com.golaxy.poi.word;
 
 import com.golaxy.poi.word.bean.TitleStyle;
+import com.golaxy.poi.word.bean.TitleStyleList;
 import org.apache.poi.wp.usermodel.HeaderFooterType;
 import org.apache.poi.xwpf.usermodel.*;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.*;
@@ -19,12 +20,14 @@ import java.util.List;
 public class DocumentBuilder {
     private XWPFDocument xwpfDocument;
     private boolean isInitTitle = false;
+    private TitleStyleList titleStyles;
 
     /**
      * 新建文档
      */
     public DocumentBuilder() {
-        xwpfDocument = new XWPFDocument();
+        this.xwpfDocument = new XWPFDocument();
+        this.titleStyles = new TitleStyleList();
     }
 
     /**
@@ -34,7 +37,28 @@ public class DocumentBuilder {
      * @throws IOException
      */
     public DocumentBuilder(InputStream template) throws IOException {
-        xwpfDocument = new XWPFDocument(template);
+        this.xwpfDocument = new XWPFDocument(template);
+    }
+
+    /**
+     * 根据自定义样式层级创建文档
+     *
+     * @param list
+     */
+    public DocumentBuilder(List<TitleStyle> list) {
+        this.titleStyles = new TitleStyleList(list);
+    }
+
+    /**
+     * 根究word模板创建
+     *
+     * @param template 模板输入流
+     * @param list     title列表
+     * @throws IOException
+     */
+    public DocumentBuilder(InputStream template, List<TitleStyle> list) throws IOException {
+        this.xwpfDocument = new XWPFDocument(template);
+        this.titleStyles = new TitleStyleList(list);
     }
 
     /**
@@ -71,21 +95,17 @@ public class DocumentBuilder {
 
     }
 
-    public void createTitle() {
-        initTitle(null);
+    /**
+     * 按层级创建标题
+     * @param level 层级，默认支持:1/2/3/4,字体大小默认为:18/16/14/12
+     * @param text 文本内容
+     */
+    public void createTitle(int level, String text) {
+        initTitle();
         XWPFParagraph paragraph = xwpfDocument.createParagraph();
         XWPFRun run = paragraph.createRun();
-        run.setText("标题 1");
-        paragraph.setStyle("标题 1");
-
-        XWPFParagraph paragraph2 = xwpfDocument.createParagraph();
-        XWPFRun run2 = paragraph2.createRun();
-        run2.setText("标题 1");
-        paragraph2.setStyle("标题 2");
-
-        XWPFParagraph paragraph3 = xwpfDocument.createParagraph();
-        XWPFRun run3 = paragraph3.createRun();
-        run3.setText("正文");
+        run.setText(text);
+        paragraph.setStyle(titleStyles.getNameByLevel(level));
 
     }
 
@@ -95,22 +115,16 @@ public class DocumentBuilder {
 
     /**
      * 加载标题样式
-     * @param titleStyleList 自定义时可以传入，需在首次插入前加载。
      */
-    public void initTitle(List<TitleStyle> titleStyleList) {
+    private void initTitle() {
         if (isInitTitle) {
             return;
         }
-        if (titleStyleList != null && titleStyleList.size() > 0) {
-            titleStyleList.forEach(item -> {
-                addCustomHeadingStyle(item.getName(), item.getLevel(), item.getFontSize());
-            });
-        } else {
-            addCustomHeadingStyle("标题 1", 1, 22);
-            addCustomHeadingStyle("标题 2", 2, 16);
-            addCustomHeadingStyle("标题 3", 3, 14);
-            addCustomHeadingStyle("标题 4", 4, 12);
-        }
+        titleStyles.getList().forEach(item -> {
+            addCustomHeadingStyle(item.getName(), item.getLevel(), item.getFontSize());
+        });
+        isInitTitle = true;
+
     }
 
     /**

@@ -12,7 +12,10 @@ public class DocumentBuilderTest {
     public void testCreateTitle() throws IOException {
         DocumentBuilder builder = new DocumentBuilder();
         builder.setHeader(HeaderFooterType.DEFAULT, ParagraphAlignment.CENTER,"1212121212");
-        builder.createTitle();
+        builder.createTitle(1,"一、测试测试");
+        builder.createTitle(2,"1.1 测试测试");
+        builder.createTitle(3,"1.1.1 测试测试");
+        builder.createTitle(4,"1.1.1.1 测试测试");
         builder.build(new FileOutputStream("/Users/jiangzhaoyue/Downloads/poiTest/1.docx"));
     }
 
