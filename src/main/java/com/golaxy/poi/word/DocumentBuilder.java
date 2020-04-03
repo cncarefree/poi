@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -182,6 +183,16 @@ public class DocumentBuilder {
         paragraph.setAlignment(align);
         XWPFRun run = paragraph.createRun();
         run.addPicture(stream,pictureType,fileName, Units.toEMU(width),Units.toEMU(height));
+
+    }
+
+    /**
+     * 替换文档内的标签为指定文本，标签语法：{}
+     * @param params key为标签内容（勿包含{}），value为替换的文本
+     */
+    public void templateReplace(Map<String,String> params){
+        DocumentTemplateReplace replace = new DocumentTemplateReplace();
+        replace.replaceTemplateDocument(this.xwpfDocument,params);
 
     }
     /**
