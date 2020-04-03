@@ -7,6 +7,8 @@ import com.golaxy.poi.word.bean.table.TableRow;
 import com.golaxy.poi.word.bean.title.TitleStyle;
 import com.golaxy.poi.word.bean.title.TitleStyleList;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.util.Units;
 import org.apache.poi.wp.usermodel.HeaderFooterType;
 import org.apache.poi.xwpf.usermodel.*;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.*;
@@ -39,7 +41,7 @@ public class DocumentBuilder {
     /**
      * 根究word模板创建
      *
-     * @param template
+     * @param template 模板输入流
      * @throws IOException
      */
     public DocumentBuilder(InputStream template) throws IOException {
@@ -101,7 +103,7 @@ public class DocumentBuilder {
      * @param level 层级，默认支持:1/2/3/4,字体大小默认为:18/16/14/12
      * @param text  文本内容
      */
-    public void createTitle(int level, String text) {
+    public void appendTitle(int level, String text) {
         initTitle();
         XWPFParagraph paragraph = xwpfDocument.createParagraph();
         XWPFRun run = paragraph.createRun();
@@ -111,13 +113,19 @@ public class DocumentBuilder {
     }
 
     /**
+     * 创建个空段落
+     */
+    public void appendEmptyParagraph(){
+        xwpfDocument.createParagraph();
+    }
+    /**
      * 创建文本段落
      *
      * @param isFirstLineIndentation 是否首行缩进
      * @param fontSize               字体大小默认五号,10.5
      * @param text                   文本
      */
-    public void creatParagraph(boolean isFirstLineIndentation, Integer fontSize, String text) {
+    public void appendParagraph(boolean isFirstLineIndentation, Integer fontSize, String text) {
         XWPFParagraph paragraph = xwpfDocument.createParagraph();
         if (isFirstLineIndentation) {
             //缇(Twips) （缇：计量单位，等于“磅”的 1/20，英寸的 1/1,440。一厘米有 567 缇。
@@ -131,7 +139,11 @@ public class DocumentBuilder {
 
     }
 
-    public void createTable(Table t) {
+    /**
+     * 添加表格
+     * @param t
+     */
+    public void appendTable(Table t) {
         XWPFTable table = xwpfDocument.createTable();
         //默认表格居然有一行，扰乱布局只好删掉。
         table.removeRow(0);
@@ -152,32 +164,35 @@ public class DocumentBuilder {
                 setTableRow(row1, row.getCell());
             }
         }
-//        List<XWPFTableRow> rows = table.getRows();
-//        for (int i = 0; i < rows.size(); i++) {
-//            List<XWPFTableCell> tableCells = rows.get(i).getTableCells();
-//            for (int j = 0; j < tableCells.size(); j++) {
-//                XWPFParagraph paragraph = tableCells.get(j).getParagraphs().get(0);
-//                XWPFRun run = paragraph.createRun();
-//                if (i == 0) {
-//                    tableCells.get(j).setWidth("2000");
-//                    //加粗
-//                    run.setBold(true);
-//                    //字体大小
-//                    run.setFontSize(22);
-//                }
-//
-//                run.setText("111");
-//                tableCells.get(j).setColor("cccccc");
-//            }
-//        }
-//
-//        table.createRow();
-
     }
 
+    /**
+     * 添加图片
+     * @param stream 图片输入流
+     * @param pictureType 图片类型 常量 org.apache.poi.xwpf.usermodel.Document
+     * @param fileName 文件名
+     * @param width 宽度，单位磅
+     * @param height 高度，单位磅
+     * @param align 对齐方式
+     * @throws IOException
+     * @throws InvalidFormatException
+     */
+    public void appendImages(InputStream stream,int pictureType,String fileName,Integer width,Integer height,ParagraphAlignment align) throws IOException, InvalidFormatException {
+        XWPFParagraph paragraph = xwpfDocument.createParagraph();
+        paragraph.setAlignment(align);
+        XWPFRun run = paragraph.createRun();
+        run.addPicture(stream,pictureType,fileName, Units.toEMU(width),Units.toEMU(height));
 
+    }
+    /**
+     * 输出文档
+     * @param stream 输出流
+     * @throws IOException
+     */
     public void build(OutputStream stream) throws IOException {
         xwpfDocument.write(stream);
+        xwpfDocument.close();
+
     }
 
     /**
@@ -244,21 +259,12 @@ public class DocumentBuilder {
 
     }
 
+    /**
+     * 设置行
+     * @param row
+     * @param cellList
+     */
     private void setTableRow(XWPFTableRow row, List<TableCell> cellList) {
-
-//                rows.forEach(row -> {
-//            List<XWPFTableCell> tableCells = row.getTableCells();
-//            tableCells.forEach(cel -> {
-//                XWPFParagraph paragraph = cel.getParagraphs().get(0);
-//                XWPFRun run = paragraph.createRun();
-//                //加粗
-//                run.setBold(true);
-//                //字体大小
-//                run.setFontSize(22);
-//                run.setText("111");
-//                cel.setColor("cccccc");
-//            });
-//        });
         for (int i = 0; i < cellList.size(); i++) {
             XWPFTableCell cell = row.getCell(i);
             if (cell == null) {
