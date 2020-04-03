@@ -47,6 +47,7 @@ public class DocumentBuilder {
      */
     public DocumentBuilder(InputStream template) throws IOException {
         this.xwpfDocument = new XWPFDocument(template);
+        this.titleStyles = new TitleStyleList();
     }
 
     /**

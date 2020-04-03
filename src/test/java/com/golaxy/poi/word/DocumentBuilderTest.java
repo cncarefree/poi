@@ -14,12 +14,15 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
 
 public class DocumentBuilderTest {
     @Test
     public void testCreateTitle() throws IOException, InvalidFormatException {
-        DocumentBuilder builder = new DocumentBuilder();
+        DocumentBuilder builder = new DocumentBuilder(new FileInputStream("/Users/jiangzhaoyue/Downloads/poiTest/1.docx"));
         builder.setHeader(HeaderFooterType.DEFAULT, ParagraphAlignment.CENTER,"1212121212");
         builder.setFooter(HeaderFooterType.DEFAULT,ParagraphAlignment.RIGHT,"ssdsds");
         builder.appendTitle(1,"一、测试测试");
@@ -49,8 +52,17 @@ public class DocumentBuilderTest {
 
        builder.appendTable(table);
         builder.appendEmptyParagraph();
+        Map<String,String> param=new HashMap<>();
+        param.put("name","張三");
+        param.put("phone","1317177171");
+        builder.templateReplace(param);
         builder.appendImages(new FileInputStream("/Users/jiangzhaoyue/Downloads/FILE.13327143321510796_41600.png"), Document.PICTURE_TYPE_PNG,"",105,105,ParagraphAlignment.LEFT);
-        builder.build(new FileOutputStream("/Users/jiangzhaoyue/Downloads/poiTest/1.docx"));
+        builder.build(new FileOutputStream("/Users/jiangzhaoyue/Downloads/poiTest/2.docx"));
+        Matcher matcher = new DocumentTemplateReplace().matcher("111${111}");
+        System.out.println("find:"+matcher.find());
+//        Map<String,String> params =new HashMap<>();
+//        params.put("111","222");
+//        System.out.println("replace:"+matcher.replaceFirst(String.valueOf(params.get(matcher.group(1)))));
     }
 
 

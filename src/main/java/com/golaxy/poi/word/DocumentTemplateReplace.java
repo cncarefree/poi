@@ -10,6 +10,12 @@ import java.util.regex.Pattern;
 
 public class DocumentTemplateReplace {
     private final String regex="\\$\\{(.+?)\\}";
+
+    /**
+     * 执行文档内标签替换。这里有个bug，标签必须是连续输入，不能移动光标。否则会检测不到标签
+     * @param doc 文档
+     * @param params
+     */
     public void replaceTemplateDocument(XWPFDocument doc, Map<String, String> params){
         replaceInPara(doc,params);
         replaceInTable(doc,params);
@@ -37,8 +43,10 @@ public class DocumentTemplateReplace {
         List<XWPFRun> runs;
         Matcher matcher;
         if (this.matcher(para.getParagraphText()).find()) {
+
             runs = para.getRuns();
             for (int i=0; i<runs.size(); i++) {
+                //TODO 此处有bug，对于word文档在切换光标位置的时候都会生成新的run，导致出现断行等现象。
                 XWPFRun run = runs.get(i);
                 String runText = run.toString();
                 matcher = this.matcher(runText);
@@ -91,5 +99,6 @@ public class DocumentTemplateReplace {
         Matcher matcher = pattern.matcher(str);
         return matcher;
     }
+
 
 }
